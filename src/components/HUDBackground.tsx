@@ -5,15 +5,15 @@ export const HUDBackground: React.FC = () => {
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden bg-[#030303]">
       {/* Radial Crimson Glows */}
       <div 
-        className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full blur-[140px] opacity-25 pointer-events-none"
+        className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[560px] h-[560px] rounded-full blur-2xl opacity-25 pointer-events-none"
         style={{ background: 'radial-gradient(circle, #FF1E1E 0%, #FF0055 40%, transparent 70%)' }}
       />
       <div 
-        className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full blur-[120px] opacity-20 pointer-events-none"
+        className="absolute bottom-[-10%] left-[-10%] w-[460px] h-[460px] rounded-full blur-2xl opacity-20 pointer-events-none"
         style={{ background: 'radial-gradient(circle, #8B0000 0%, #FF5E00 50%, transparent 70%)' }}
       />
       <div 
-        className="absolute top-[40%] right-[-15%] w-[400px] h-[400px] rounded-full blur-[130px] opacity-15 pointer-events-none"
+        className="absolute top-[40%] right-[-15%] w-[360px] h-[360px] rounded-full blur-2xl opacity-15 pointer-events-none"
         style={{ background: 'radial-gradient(circle, #FF0055 0%, #FF1E1E 60%, transparent 80%)' }}
       />
 

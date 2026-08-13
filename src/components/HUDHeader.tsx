@@ -74,7 +74,7 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
           onClick={handleToggleBt}
           onMouseEnter={() => setShowTooltip('Tai nghe Bluetooth')}
           onMouseLeave={() => setShowTooltip(null)}
-          className={`relative group flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all duration-300 ${
+          className={`relative group hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full border transition-all duration-300 ${
             btSynced
               ? 'bg-[#120505] border-[#FF1E1E]/40 text-[#FF5E00] shadow-[0_0_10px_rgba(255,30,30,0.25)]'
               : 'bg-[#121212] border-gray-700 text-gray-500'
@@ -102,7 +102,7 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
             playHudSound('click');
             onToggleAudioMute();
           }}
-          className={`p-1.5 rounded-lg border transition-all ${
+          className={`min-w-11 min-h-11 flex items-center justify-center rounded-lg border transition-all ${
             audioMuted
               ? 'bg-red-950/40 border-red-800 text-red-500'
               : 'bg-[#180808] border-[#FF1E1E]/30 text-[#FF5E00] hover:text-[#FF1E1E] shadow-[0_0_8px_rgba(255,30,30,0.2)]'
@@ -119,7 +119,7 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
             onRefreshNews();
           }}
           disabled={syncing}
-          className={`p-1.5 rounded-lg border transition-all ${
+          className={`min-w-11 min-h-11 flex items-center justify-center rounded-lg border transition-all ${
             syncing
               ? 'bg-[#180808] border-[#FF1E1E]/30 text-[#FF5E00]'
               : 'bg-[#180808] border-[#FF1E1E]/30 text-gray-400 hover:text-[#FF5E00]'
@@ -140,7 +140,7 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
             onToggleVoice();
           }}
           disabled={!voiceSupported}
-          className={`relative p-1.5 rounded-lg border transition-all ${
+          className={`relative min-w-11 min-h-11 flex items-center justify-center rounded-lg border transition-all ${
             voiceListening
               ? 'bg-gradient-to-r from-[#FF1E1E] to-[#FF0055] text-white shadow-[0_0_12px_rgba(255,30,30,0.6)]'
               : 'bg-[#180808] border-[#FF1E1E]/30 text-[#FF5E00] hover:text-[#FF1E1E]'
@@ -149,7 +149,7 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
             voiceListening
               ? 'Đang nghe lệnh giọng nói liên tục — bấm để tắt'
               : voiceSupported
-              ? 'Bật điều khiển giọng nói (nói: "tiếp theo", "lưu đạn", "ngủ"... )'
+              ? 'Bật điều khiển giọng nói (nói: "tiếp theo", "lưu", "ngủ"... )'
               : 'Trình duyệt không hỗ trợ nhận dạng giọng nói'
           }
         >
@@ -166,7 +166,7 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
             playHudSound('voice');
             onOpenVoiceModal();
           }}
-          className="p-1.5 rounded-lg bg-[#180808] border border-[#FF1E1E]/30 text-[#FF5E00] hover:text-white transition-all"
+          className="min-w-11 min-h-11 flex items-center justify-center rounded-lg bg-[#180808] border border-[#FF1E1E]/30 text-[#FF5E00] hover:text-white transition-all"
           title="Hỏi L.H.T / lệnh văn bản"
         >
           <SquareTerminal className="w-4 h-4" />
@@ -178,7 +178,7 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
             playHudSound('click');
             onGoToSleep();
           }}
-          className="p-1.5 rounded-lg bg-[#180808] border border-[#FF1E1E]/30 text-gray-400 hover:text-[#FF5E00] hover:border-[#FF1E1E] transition-all"
+          className="min-w-11 min-h-11 flex items-center justify-center rounded-lg bg-[#180808] border border-[#FF1E1E]/30 text-gray-400 hover:text-[#FF5E00] hover:border-[#FF1E1E] transition-all"
           title="Chuyển về chế độ ngủ nền"
         >
           <Moon className="w-4 h-4" />

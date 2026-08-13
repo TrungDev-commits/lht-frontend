@@ -395,7 +395,7 @@ export const DriveMode = forwardRef<DriveModeHandle, DriveModeProps>(function Dr
                 e.stopPropagation();
                 onOpenGallery(currentItem);
               }}
-              className="lht-chamfer mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#180a0a] border border-[#FF1E1E]/35 text-[10px] font-mono text-[#FF5E00] hover:text-white transition-all drop-shadow-[0_0_10px_rgba(255,30,30,0.15)]"
+              className="lht-chamfer mt-4 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 min-h-11 bg-[#180a0a] border border-[#FF1E1E]/35 text-[10px] font-mono text-[#FF5E00] hover:text-white transition-all drop-shadow-[0_0_10px_rgba(255,30,30,0.15)]"
             >
               <ArrowDown className="w-3 h-3 rotate-180" />
               MỞ THƯ VIỆN HÌNH ẢNH
@@ -406,7 +406,7 @@ export const DriveMode = forwardRef<DriveModeHandle, DriveModeProps>(function Dr
         <div className="flex items-center justify-between w-full max-w-sm mt-6 px-4">
           <button
             onClick={goPrev}
-            className="p-2.5 rounded-full bg-[#180a0a] border border-[#FF1E1E]/30 text-[#FF5E00] hover:text-white hover:bg-[#FF1E1E]/20 transition-all shadow-[0_0_10px_rgba(255,30,30,0.2)]"
+            className="min-w-12 min-h-12 flex items-center justify-center rounded-full bg-[#180a0a] border border-[#FF1E1E]/30 text-[#FF5E00] hover:text-white hover:bg-[#FF1E1E]/20 transition-all shadow-[0_0_10px_rgba(255,30,30,0.2)]"
             title="Tin trước"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -414,17 +414,17 @@ export const DriveMode = forwardRef<DriveModeHandle, DriveModeProps>(function Dr
 
           <button
             onClick={triggerBookmark}
-            className="group flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#FF1E1E] to-[#8B0000] text-white font-mono text-xs font-bold shadow-[0_0_15px_rgba(255,30,30,0.4)] hover:scale-105 active:scale-95 transition-all"
+            className="group flex items-center justify-center gap-1.5 px-4 py-2 min-h-11 rounded-xl bg-gradient-to-r from-[#FF1E1E] to-[#8B0000] text-white font-mono text-xs font-bold shadow-[0_0_15px_rgba(255,30,30,0.4)] hover:scale-105 active:scale-95 transition-all"
             title="Vuốt xuống hoặc bấm để lưu tin"
           >
             <Bookmark className={`w-4 h-4 ${currentItem.bookmarked ? 'text-white fill-white' : ''}`} />
-            <span>{currentItem.bookmarked ? 'ĐÃ LƯU' : 'LƯU ĐẠN DƯỢC'}</span>
+            <span>{currentItem.bookmarked ? 'ĐÃ LƯU' : 'LƯU TIN'}</span>
             <ArrowDown className="w-3.5 h-3.5 text-white/80 animate-bounce" />
           </button>
 
           <button
             onClick={goNext}
-            className="p-2.5 rounded-full bg-[#180a0a] border border-[#FF1E1E]/30 text-[#FF5E00] hover:text-white hover:bg-[#FF1E1E]/20 transition-all shadow-[0_0_10px_rgba(255,30,30,0.2)]"
+            className="min-w-12 min-h-12 flex items-center justify-center rounded-full bg-[#180a0a] border border-[#FF1E1E]/30 text-[#FF5E00] hover:text-white hover:bg-[#FF1E1E]/20 transition-all shadow-[0_0_10px_rgba(255,30,30,0.2)]"
             title="Tin tiếp theo"
           >
             <ChevronRight className="w-5 h-5" />

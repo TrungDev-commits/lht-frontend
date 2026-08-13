@@ -1,5 +1,7 @@
 // Audio Synth & Speech Helper for L.H.T Terminal
 
+import { speakText, stopSpeech as stopAllSpeech } from './speech';
+
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext {
@@ -66,40 +68,12 @@ export function playHudSound(type: 'click' | 'bookmark' | 'voice' | 'alert') {
   }
 }
 
-// Speak Vietnamese text using Web Speech API with fallback notification
-export function speakVietnamese(text: string, onEnd?: () => void): SpeechSynthesisUtterance | null {
-  if (!('speechSynthesis' in window)) {
-    console.warn('Web Speech API not supported in this browser.');
-    if (onEnd) onEnd();
-    return null;
-  }
-
-  // Stop previous speech
-  window.speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'vi-VN';
-  utterance.rate = 1.05;
-  utterance.pitch = 1.0;
-
-  // Try to find a Vietnamese voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const viVoice = voices.find(v => v.lang.includes('vi') || v.lang.includes('VI'));
-  if (viVoice) {
-    utterance.voice = viVoice;
-  }
-
-  if (onEnd) {
-    utterance.onend = onEnd;
-    utterance.onerror = onEnd;
-  }
-
-  window.speechSynthesis.speak(utterance);
-  return utterance;
+// Speak mixed Vietnamese/English text using the deep speech module.
+// English & IT terms are read by an English voice, Vietnamese by a Vietnamese voice.
+export function speakVietnamese(text: string, onEnd?: () => void): { stop: () => void } | null {
+  return speakText(text, { rate: 1.0, onEnd });
 }
 
 export function stopSpeech() {
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-  }
+  stopAllSpeech();
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewMode } from '../types';
-import { Navigation2, Network, ShieldAlert, Radar } from 'lucide-react';
+import { Newspaper, Network, Bookmark, Radar } from 'lucide-react';
 import { playHudSound } from '../utils/audioSynth';
 
 interface BottomNavProps {
@@ -17,8 +17,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const navItems: { id: ViewMode; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
       id: 'DRIVE',
-      label: 'TẨU TÁN',
-      icon: <Navigation2 className="w-5 h-5" />,
+      label: 'BẢN TIN',
+      icon: <Newspaper className="w-5 h-5" />,
     },
     {
       id: 'XRAY',
@@ -27,8 +27,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     },
     {
       id: 'AMMO',
-      label: 'KHO ĐẠN',
-      icon: <ShieldAlert className="w-5 h-5" />,
+      label: 'ĐÃ LƯU',
+      icon: <Bookmark className="w-5 h-5" />,
       badge: savedCount,
     },
     {
@@ -54,7 +54,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 playHudSound('click');
                 onSelectView(item.id);
               }}
-              className={`relative flex-1 py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all duration-300 ${
+              className={`relative flex-1 min-h-[56px] py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all duration-300 ${
                 isActive
                   ? 'text-white'
                   : 'text-gray-500 hover:text-gray-300'

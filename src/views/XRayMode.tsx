@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Mic, Square, Cpu, Globe, Loader2 } from 'lucide-react';
+import { Mic, Square, Cpu, Globe, Loader2, Pause, Play } from 'lucide-react';
 import type { GraphData, GraphNodeData, SyncedNews } from '../db/indexedDB';
 import { BottomSheet } from '../components/BottomSheet';
 import { apiUrl } from '../config/api';
@@ -74,16 +74,71 @@ function distributeNodes(nodes: GraphNodeData[]): RenderNode[] {
   return rendered;
 }
 
+const spriteCache = new Map<string, HTMLCanvasElement>();
+
+function getNodeSprite(category: 'HARDWARE' | 'SOFTWARE'): HTMLCanvasElement {
+  const cached = spriteCache.get(category);
+  if (cached) return cached;
+
+  const size = 64;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const g = canvas.getContext('2d');
+  if (!g) return canvas;
+
+  const isHardware = category === 'HARDWARE';
+  const glowColor = isHardware ? 'rgba(255,30,30,' : 'rgba(255,80,140,';
+  const coreColor = isHardware ? '#FF1E1E' : '#FF4D8F';
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 11;
+
+  const glow = g.createRadialGradient(cx, cy, 0, cx, cy, r * 2.6);
+  glow.addColorStop(0, `${glowColor}0.5)`);
+  glow.addColorStop(1, `${glowColor}0)`);
+  g.beginPath();
+  g.arc(cx, cy, r * 2.6, 0, Math.PI * 2);
+  g.fillStyle = glow;
+  g.fill();
+
+  const sphere = g.createRadialGradient(cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
+  sphere.addColorStop(0, isHardware ? '#FF6B6B' : '#FF8FB3');
+  sphere.addColorStop(0.5, coreColor);
+  sphere.addColorStop(1, '#4a0000');
+  g.beginPath();
+  g.arc(cx, cy, r, 0, Math.PI * 2);
+  g.fillStyle = sphere;
+  g.fill();
+
+  g.strokeStyle = 'rgba(255,30,30,0.7)';
+  g.lineWidth = 1.2;
+  g.stroke();
+
+  spriteCache.set(category, canvas);
+  return canvas;
+}
+
 export function XRayMode({ items, onXRayActive }: XRayModeProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const nodesRef = useRef<RenderNode[]>([]);
   const edgesRef = useRef<{ source: string; target: string; relation?: string }[]>([]);
   const selectedNodeRef = useRef<RenderNode | null>(null);
+  const rotationRef = useRef(0);
+  const dragStateRef = useRef({ dragging: false, lastX: 0, moved: 0 });
+  const autoRotateRef = useRef(true);
 
   const [selected, setSelected] = useState<{ node: RenderNode; analogy?: string } | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [statusText, setStatusText] = useState('CHẠM VÀO NODE ĐỂ XEM ẨN DỤ WEB DEV');
+  const [autoRotate, setAutoRotate] = useState(
+    () => !(typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+  );
+  const [statusText, setStatusText] = useState('KÉO NGANG ĐỂ XOAY • CHẠM NODE ĐỂ XEM ẨN DỤ WEB DEV');
+
+  useEffect(() => {
+    autoRotateRef.current = autoRotate;
+  }, [autoRotate]);
 
   const graphRef = useRef<GraphData>(collectGraph(items));
   const meetingRecognitionRef = useRef<SpeechRecognition | null>(null);
@@ -106,8 +161,7 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
     if (!ctx) return;
 
     let rafId = 0;
-    let rotation = 0;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
@@ -132,45 +186,11 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
     };
 
     const drawNode = (node: RenderNode) => {
-      const isHardware = node.category === 'HARDWARE';
-      const glowColor = isHardware ? 'rgba(255,30,30,' : 'rgba(255,80,140,';
-      const coreColor = isHardware ? '#FF1E1E' : '#FF4D8F';
-
-      const gradient = ctx.createRadialGradient(
-        node.sx,
-        node.sy,
-        0,
-        node.sx,
-        node.sy,
-        node.sr * 3.2
-      );
-      gradient.addColorStop(0, `${glowColor}${0.35 * node.alpha})`);
-      gradient.addColorStop(1, `${glowColor}0)`);
-
-      ctx.beginPath();
-      ctx.arc(node.sx, node.sy, node.sr * 3.2, 0, Math.PI * 2);
-      ctx.fillStyle = gradient;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(node.sx, node.sy, node.sr, 0, Math.PI * 2);
-      const sphere = ctx.createRadialGradient(
-        node.sx - node.sr * 0.35,
-        node.sy - node.sr * 0.35,
-        node.sr * 0.1,
-        node.sx,
-        node.sy,
-        node.sr
-      );
-      sphere.addColorStop(0, isHardware ? '#FF6B6B' : '#FF8FB3');
-      sphere.addColorStop(0.5, coreColor);
-      sphere.addColorStop(1, '#4a0000');
-      ctx.fillStyle = sphere;
-      ctx.fill();
-
-      ctx.strokeStyle = `rgba(255,30,30,${0.7 * node.alpha})`;
-      ctx.lineWidth = 1.2;
-      ctx.stroke();
+      const sprite = getNodeSprite(node.category);
+      const ds = node.sr * 6;
+      ctx.globalAlpha = node.alpha;
+      ctx.drawImage(sprite, node.sx - ds / 2, node.sy - ds / 2, ds, ds);
+      ctx.globalAlpha = 1;
 
       ctx.font = '9px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
@@ -180,7 +200,10 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
 
     const frame = () => {
       if (!activeRef.current) return;
-      rotation += ROTATE_SPEED;
+      if (autoRotateRef.current && !dragStateRef.current.dragging) {
+        rotationRef.current += ROTATE_SPEED;
+      }
+      const rotation = rotationRef.current;
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
 
@@ -218,7 +241,30 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
     };
   }, [onXRayActive]);
 
+  const handlePointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    dragStateRef.current = { dragging: true, lastX: event.clientX, moved: 0 };
+    (event.currentTarget as HTMLCanvasElement).setPointerCapture?.(event.pointerId);
+  }, []);
+
+  const handlePointerMove = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    const state = dragStateRef.current;
+    if (!state.dragging) return;
+    const dx = event.clientX - state.lastX;
+    state.lastX = event.clientX;
+    state.moved += Math.abs(dx);
+    rotationRef.current += dx * 0.008;
+  }, []);
+
+  const endDrag = useCallback(() => {
+    dragStateRef.current.dragging = false;
+  }, []);
+
   const handleCanvasClick = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (dragStateRef.current.moved > 6) {
+      dragStateRef.current.moved = 0;
+      return;
+    }
+    dragStateRef.current.moved = 0;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -227,7 +273,7 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
 
     const hit = [...nodesRef.current]
       .reverse()
-      .find((node) => Math.hypot(node.sx - px, node.sy - py) <= Math.max(node.sr + 4, 12));
+      .find((node) => Math.hypot(node.sx - px, node.sy - py) <= Math.max(node.sr + 8, 20));
 
     if (hit) {
       selectedNodeRef.current = hit;
@@ -370,7 +416,7 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
           }}
           onClick={handleMeetingToggle}
           disabled={isProcessing}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-[10px] font-bold transition-all ${
+          className={`flex items-center justify-center gap-1.5 px-4 min-h-11 rounded-lg font-mono text-[10px] font-bold transition-all ${
             isRecording
               ? 'bg-[#FF1E1E] text-white animate-pulse shadow-[0_0_15px_#FF1E1E]'
               : 'bg-[#180a0a] border border-[#FF1E1E]/40 text-[#FF5E00] hover:text-white'
@@ -392,8 +438,25 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
         <canvas
           ref={canvasRef}
           onClick={handleCanvasClick}
-          className="w-full h-full cursor-pointer"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={endDrag}
+          onPointerLeave={endDrag}
+          onPointerCancel={endDrag}
+          className="w-full h-full touch-none cursor-grab active:cursor-grabbing"
         />
+        <button
+          onClick={() => setAutoRotate((v) => !v)}
+          className={`absolute bottom-3 right-1 min-w-11 min-h-11 flex items-center justify-center gap-1.5 rounded-lg border font-mono text-[9px] font-bold transition-all ${
+            autoRotate
+              ? 'bg-[#180a0a] border-[#FF1E1E]/40 text-[#FF5E00] hover:text-white'
+              : 'bg-[#0c0606] border-[#FF1E1E]/20 text-gray-500 hover:text-[#FF5E00]'
+          }`}
+          title={autoRotate ? 'Tạm dừng tự xoay' : 'Tự xoay graph'}
+        >
+          {autoRotate ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+          <span>{autoRotate ? 'DỪNG' : 'XOAY'}</span>
+        </button>
         <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-[#120808]/80 border border-[#FF1E1E]/30 font-mono text-[9px] text-[#FF5E00]/90 whitespace-nowrap">
           {statusText}
         </div>
@@ -408,7 +471,7 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
           </span>
           <span className="flex items-center gap-1">
             <Globe className="w-3 h-3" />
-            ĐANG XOAY
+            {autoRotate ? 'ĐANG XOAY' : 'DỪNG XOAY'}
           </span>
         </div>
       </div>
@@ -419,7 +482,7 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
         transition={{ delay: 0.3 }}
         className="mt-2 w-full max-w-md px-3 py-2 rounded-xl bg-[#0c0606]/80 border border-[#FF1E1E]/25 font-mono text-[9px] text-gray-500 leading-relaxed"
       >
-        CHẠM NODE: XEM ẨN DỤ WEB DEV • GIỮ NÚT "CHẾ ĐỘ HỌP": GHI ÂM CUỘC HỌP → L.H.T THÊM NODE CÔNG NGHỆ MỚI
+        KÉO NGANG: XOAY GRAPH • CHẠM NODE: XEM ẨN DỤ WEB DEV • GIỮ NÚT "CHẾ ĐỘ HỌP": GHI ÂM CUỘC HỌP → L.H.T THÊM NODE CÔNG NGHỆ MỚI
       </motion.div>
 
       <BottomSheet
