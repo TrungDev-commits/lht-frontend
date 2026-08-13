@@ -4,7 +4,21 @@ import { lhtDb, getAllNews, saveNewsBatch, type SyncedNews } from '../db/indexed
 import { apiUrl } from '../config/api';
 
 const API_TODAY_URL = apiUrl('/api/news/today');
+const PIPELINE_RUN_URL = apiUrl('/api/pipeline/run');
+const PIPELINE_SECRET =
+  typeof import.meta.env.VITE_PIPELINE_SECRET === 'string'
+    ? import.meta.env.VITE_PIPELINE_SECRET
+    : undefined;
 const SYNC_INTERVAL_MS = 30 * 60 * 1000;
+
+export interface PipelineSummary {
+  processed: number;
+  created: number;
+  duplicatesSkipped: number;
+  failed: number;
+  errors: string[];
+  sourcesProcessed: number;
+}
 
 export interface SyncState {
   items: SyncedNews[];
@@ -13,6 +27,7 @@ export interface SyncState {
   online: boolean;
   lastSyncedAt: number | null;
   sync: () => Promise<boolean>;
+  refresh: () => Promise<boolean>;
 }
 
 export function useNewsSync(): SyncState {
@@ -24,39 +39,92 @@ export function useNewsSync(): SyncState {
 
   const syncInFlight = useRef(false);
 
+  const setOfflineError = useCallback(() => {
+    setError('Đang ngoại tuyến — dữ liệu đọc từ bộ nhớ cục bộ.');
+    setLoading(false);
+  }, []);
+
+  const fetchTodayAndStore = useCallback(async (): Promise<boolean> => {
+    const response = await fetch(API_TODAY_URL, {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error(`Lỗi máy chủ: HTTP ${response.status}`);
+    }
+
+    const payload = (await response.json()) as { items?: unknown[] };
+    const stored = await saveNewsBatch(payload.items ?? []);
+    setLastSyncedAt(Date.now());
+    return stored > 0;
+  }, []);
+
   const sync = useCallback(async (): Promise<boolean> => {
     if (syncInFlight.current) return false;
     if (!navigator.onLine) {
-      setError('Đang ngoại tuyến — dữ liệu đọc từ bộ nhớ cục bộ.');
-      setLoading(false);
+      setOfflineError();
       return false;
     }
 
     syncInFlight.current = true;
+    setLoading(true);
     try {
-      const response = await fetch(API_TODAY_URL, {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Lỗi máy chủ: HTTP ${response.status}`);
-      }
-
-      const payload = (await response.json()) as { items?: unknown[] };
-      const stored = await saveNewsBatch(payload.items ?? []);
-      setLastSyncedAt(Date.now());
+      const stored = await fetchTodayAndStore();
       setError(null);
-      setLoading(false);
-      return stored > 0;
+      return stored;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không thể đồng bộ tin tức.');
-      setLoading(false);
       return false;
     } finally {
       syncInFlight.current = false;
+      setLoading(false);
     }
-  }, []);
+  }, [fetchTodayAndStore, setOfflineError]);
+
+  const refresh = useCallback(async (): Promise<boolean> => {
+    if (syncInFlight.current) return false;
+    if (!navigator.onLine) {
+      setOfflineError();
+      return false;
+    }
+
+    syncInFlight.current = true;
+    setLoading(true);
+    try {
+      const pipelineResponse = await fetch(PIPELINE_RUN_URL, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(PIPELINE_SECRET ? { secret: PIPELINE_SECRET } : {}),
+        cache: 'no-store',
+      });
+
+      if (!pipelineResponse.ok) {
+        throw new Error(
+          pipelineResponse.status === 401
+            ? 'Pipeline từ chối: thiếu bí mật X-LHT-Pipeline-Secret.'
+            : `Pipeline lỗi: HTTP ${pipelineResponse.status}`
+        );
+      }
+
+      const pipeline = (await pipelineResponse.json()) as { success?: boolean; result?: PipelineSummary };
+      const stored = await fetchTodayAndStore();
+      setError(null);
+      if (!stored && pipeline?.result) {
+        const { created, duplicatesSkipped, failed } = pipeline.result;
+        setError(
+          `Pipeline xong: ${created} tin mới, ${duplicatesSkipped} trùng lặp, ${failed} lỗi — chưa có tin mới trên kênh.`
+        );
+      }
+      return stored;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể chạy pipeline tin tức.');
+      return false;
+    } finally {
+      syncInFlight.current = false;
+      setLoading(false);
+    }
+  }, [fetchTodayAndStore, setOfflineError]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -92,5 +160,6 @@ export function useNewsSync(): SyncState {
     online,
     lastSyncedAt,
     sync,
+    refresh,
   };
 }

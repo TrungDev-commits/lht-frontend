@@ -240,7 +240,7 @@ export default function App() {
         voiceSupported={voiceSTT.supported}
         onToggleVoice={handleToggleVoice}
         syncing={newsSync.loading}
-        onRefreshNews={() => void newsSync.sync()}
+        onRefreshNews={() => void newsSync.refresh()}
         lastSyncedAt={newsSync.lastSyncedAt}
         onGoToSleep={handleSleep}
       />
@@ -252,7 +252,7 @@ export default function App() {
             items={newsSync.items}
             onToggleBookmark={handleToggleBookmark}
             onOpenGallery={handleOpenGallery}
-            onRefresh={() => void newsSync.sync()}
+            onRefresh={() => void newsSync.refresh()}
             syncing={newsSync.loading}
           />
         )}

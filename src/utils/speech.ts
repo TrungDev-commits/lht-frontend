@@ -48,7 +48,8 @@ const DEFAULT_PITCH = 1.0;
 const GAP_MS = 240;
 const VI_CHUNK_CHARS = 140;
 
-const VI_DIACRITIC_RE = /[ăâđêôơưĂÂĐÊÔƠƯ]/;
+const VI_DIACRITIC_RE =
+  /[ăâđêôơưĂÂĐÊÔƠƯáàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ]/;
 const WORD_RE = /[\p{L}\p{N}]+(?:[._/#@'-][\p{L}\p{N}]+)*/gu;
 
 export function isSpeechSupported(): boolean {
@@ -179,9 +180,10 @@ function finish() {
   emitState();
 }
 
-function speakNext() {
+function speakNext(sessionId?: number) {
   const current = session;
   if (!current || current.cancelled) return;
+  if (sessionId !== undefined && current.id !== sessionId) return;
   const myId = current.id;
 
   if (current.index >= current.queue.length) {
@@ -200,19 +202,20 @@ function speakNext() {
     if (session?.id !== myId || session.cancelled) return;
     if (session.gapTimer !== null) window.clearTimeout(session.gapTimer);
     session.gapTimer = window.setTimeout(() => {
-      if (session?.id === myId) speakNext();
+      speakNext(myId);
     }, GAP_MS);
   };
 
   utterance.onerror = (event) => {
+    if (session?.id !== myId) return;
     if (event.error === 'canceled' || event.error === 'interrupted') {
-      finish();
+      if (session.cancelled) finish();
       return;
     }
-    if (session?.id !== myId || session.cancelled) return;
+    if (session.cancelled) return;
     if (session.gapTimer !== null) window.clearTimeout(session.gapTimer);
     session.gapTimer = window.setTimeout(() => {
-      if (session?.id === myId) speakNext();
+      speakNext(myId);
     }, GAP_MS);
   };
 
@@ -246,7 +249,9 @@ export function speakText(text: string, options?: SpeakOptions): SpeechControlle
     onEnd,
   };
   emitState();
-  speakNext();
+
+  const sessionId = session.id;
+  window.setTimeout(() => speakNext(sessionId), 0);
 
   return { stop: stopSpeech };
 }

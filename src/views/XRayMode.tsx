@@ -121,6 +121,7 @@ function getNodeSprite(category: 'HARDWARE' | 'SOFTWARE'): HTMLCanvasElement {
 
 export function XRayMode({ items, onXRayActive }: XRayModeProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const baseNodesRef = useRef<RenderNode[]>([]);
   const nodesRef = useRef<RenderNode[]>([]);
   const edgesRef = useRef<{ source: string; target: string; relation?: string }[]>([]);
   const selectedNodeRef = useRef<RenderNode | null>(null);
@@ -147,7 +148,8 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
 
   useEffect(() => {
     graphRef.current = collectGraph(items);
-    nodesRef.current = distributeNodes(graphRef.current.nodes);
+    baseNodesRef.current = distributeNodes(graphRef.current.nodes);
+    nodesRef.current = baseNodesRef.current;
     edgesRef.current = graphRef.current.edges;
   }, [items]);
 
@@ -212,7 +214,7 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
       const cos = Math.cos(rotation);
       const sin = Math.sin(rotation);
 
-      const projected: RenderNode[] = nodesRef.current
+      const projected: RenderNode[] = baseNodesRef.current
         .map((node) => {
           const rx = node.x * cos - node.z * sin;
           const rz = node.x * sin + node.z * cos;
@@ -374,7 +376,8 @@ export function XRayMode({ items, onXRayActive }: XRayModeProps) {
               })),
             ],
           };
-          nodesRef.current = distributeNodes(graphRef.current.nodes);
+          baseNodesRef.current = distributeNodes(graphRef.current.nodes);
+          nodesRef.current = baseNodesRef.current;
           edgesRef.current = graphRef.current.edges;
         }
 
