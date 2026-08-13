@@ -159,6 +159,11 @@ export const IdleSleepScreen: React.FC<IdleSleepScreenProps> = ({ onStart }) => 
       <div className="lht-reactor-halo absolute pointer-events-none w-80 h-80 rounded-full bg-[#FF1E1E]/10 blur-3xl" />
 
       <div className="relative flex flex-col items-center">
+        <img
+          src="/icons/logo-sm.png"
+          alt="L.H.T"
+          className="h-10 w-auto mb-5 opacity-90 drop-shadow-[0_0_15px_rgba(255,30,30,0.5)]"
+        />
         <p className="lht-blink font-mono text-[9px] text-[#FF5E00] tracking-[0.4em] mb-8">
           J.A.R.V.I.S // NANOTECH
         </p>
@@ -212,7 +217,7 @@ export const IdleSleepScreen: React.FC<IdleSleepScreenProps> = ({ onStart }) => 
         </p>
       </div>
 
-      <div className="absolute bottom-8 left-0 right-0 text-center font-mono text-[9px] text-gray-700 tracking-widest">
+      <div className="absolute bottom-[calc(var(--lht-safe-bottom)+2rem)] left-0 right-0 text-center font-mono text-[9px] text-gray-700 tracking-widest">
         L.H.T SLEEP MODE // TẠM NGƯNG HỆ THỐNG
       </div>
     </div>

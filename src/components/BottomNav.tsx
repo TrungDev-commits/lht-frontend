@@ -39,7 +39,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md">
+    <div className="fixed bottom-[calc(var(--lht-safe-bottom)+1rem)] left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md">
       {/* Floating Glassmorphic Container */}
       <div className="relative p-1.5 rounded-2xl bg-[#0d0707]/85 backdrop-blur-xl border border-[#FF1E1E]/30 shadow-[0_8px_32px_rgba(255,30,30,0.25)] flex items-center justify-around">
         {/* Glow Line Indicator */}

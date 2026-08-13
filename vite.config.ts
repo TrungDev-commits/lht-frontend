@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/favicon.svg'],
+      includeAssets: ['icons/favicon.png', 'icons/favicon.svg'],
       manifest: {
         name: 'L.H.T - Logical Heuristic Terminal',
         short_name: 'L.H.T',

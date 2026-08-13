@@ -337,7 +337,7 @@ export const XRayModeView: React.FC<XRayModeViewProps> = ({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-16 z-50 px-4 py-2 rounded-xl bg-[#180808] border border-[#FF1E1E] text-[#FF5E00] font-mono text-xs font-bold shadow-[0_0_20px_#FF1E1E] flex items-center gap-2"
+            className="fixed top-[calc(var(--lht-safe-top)+4rem)] z-50 px-4 py-2 rounded-xl bg-[#180808] border border-[#FF1E1E] text-[#FF5E00] font-mono text-xs font-bold shadow-[0_0_20px_#FF1E1E] flex items-center gap-2"
           >
             <CheckCircle2 className="w-4 h-4 text-[#FF1E1E]" />
             <span>ĐÃ THÊM MỐI LIÊN KẾT VÀO KHO ĐẠN DƯỢC!</span>
@@ -438,7 +438,7 @@ export const XRayModeView: React.FC<XRayModeViewProps> = ({
           playHudSound('voice');
           onOpenVoiceModal();
         }}
-        className="fixed bottom-20 right-6 z-40 p-4 rounded-full bg-gradient-to-tr from-[#FF1E1E] via-[#FF5E00] to-[#FF0055] text-white shadow-[0_0_25px_rgba(255,30,30,0.8)] border-2 border-white/40 hover:scale-110 active:scale-95 transition-all flex items-center justify-center group"
+        className="fixed bottom-[calc(var(--lht-safe-bottom)+5rem)] right-6 z-40 p-4 rounded-full bg-gradient-to-tr from-[#FF1E1E] via-[#FF5E00] to-[#FF0055] text-white shadow-[0_0_25px_rgba(255,30,30,0.8)] border-2 border-white/40 hover:scale-110 active:scale-95 transition-all flex items-center justify-center group"
         title="Bật Lệnh Giọng Nói Tiếng Việt"
       >
         <Mic className="w-6 h-6 animate-pulse group-hover:rotate-12 transition-transform" />
@@ -463,7 +463,7 @@ export const XRayModeView: React.FC<XRayModeViewProps> = ({
               }
             }}
             transition={{ type: 'spring', stiffness: 280, damping: 28 }}
-            className="fixed inset-x-0 bottom-0 z-50 w-full max-w-md mx-auto p-5 rounded-t-3xl bg-[#0f0707]/95 border-t-2 border-[#FF1E1E] backdrop-blur-2xl shadow-[0_-10px_40px_rgba(255,30,30,0.35)] font-sans cursor-grab active:cursor-grabbing touch-pan-y"
+            className="fixed inset-x-0 bottom-0 z-50 w-full max-w-md mx-auto pt-5 px-5 pb-[max(var(--lht-safe-bottom),1.25rem)] rounded-t-3xl bg-[#0f0707]/95 border-t-2 border-[#FF1E1E] backdrop-blur-2xl shadow-[0_-10px_40px_rgba(255,30,30,0.35)] font-sans cursor-grab active:cursor-grabbing touch-pan-y"
           >
             {/* Slide Bar Header with Gesture Hint */}
             <div className="flex flex-col items-center justify-center mb-3">

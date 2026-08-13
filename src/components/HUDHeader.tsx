@@ -42,15 +42,16 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
   };
 
   return (
-    <header className="relative z-30 w-full px-4 pt-3 pb-2 bg-[#070707]/80 backdrop-blur-md border-b border-[#FF1E1E]/20 flex items-center justify-between select-none">
+    <header className="relative z-30 w-full px-4 pt-[calc(var(--lht-safe-top)+0.75rem)] pb-2 bg-[#070707]/80 backdrop-blur-md border-b border-[#FF1E1E]/20 flex items-center justify-between select-none">
       {/* Left: Terminal Logo & Bluetooth Sync Badge */}
       <div className="flex items-center gap-3">
         {/* Terminal Logo Badge */}
-        <div className="flex items-center gap-1.5">
-          <div className="relative w-3 h-3 flex items-center justify-center">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[#FF1E1E] opacity-75 animate-ping" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF0055]" />
-          </div>
+        <div className="flex items-center gap-2">
+          <img
+            src="/icons/logo-sm.png"
+            alt="L.H.T"
+            className="h-5 w-auto drop-shadow-[0_0_8px_rgba(255,30,30,0.6)]"
+          />
           <span className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E1E] via-[#FF5E00] to-[#FF0055] tracking-widest text-base font-mono drop-shadow-[0_0_8px_rgba(255,30,30,0.6)]">
             L.H.T
           </span>

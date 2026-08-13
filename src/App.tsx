@@ -223,7 +223,7 @@ export default function App() {
         onGoToSleep={handleSleep}
       />
 
-      <main className="relative z-10 w-full max-w-lg mx-auto pt-2 pb-20">
+      <main className="relative z-10 w-full max-w-lg mx-auto pt-2 pb-[calc(var(--lht-safe-bottom)+5rem)]">
         {currentView === 'DRIVE' && (
           <DriveMode
             items={newsSync.items}
@@ -286,21 +286,21 @@ export default function App() {
       )}
 
       {tts.isSpeaking && (
-        <div className="fixed top-1 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#120606]/90 border border-[#FF1E1E]/40 font-mono text-[9px] text-[#FF0055] animate-pulse">
+        <div className="fixed top-[calc(var(--lht-safe-top)+0.25rem)] left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#120606]/90 border border-[#FF1E1E]/40 font-mono text-[9px] text-[#FF0055] animate-pulse">
           <span className="w-1.5 h-1.5 rounded-full bg-[#FF1E1E]" />
           <span>{tts.isPaused ? 'TẠM DỪNG GIỌNG NÓI' : 'L.H.T ĐANG NÓI...'}</span>
         </div>
       )}
 
       {voiceSTT.listening && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#120606]/90 border border-[#FF1E1E]/40 font-mono text-[9px] text-[#FF5E00] animate-pulse">
+        <div className="fixed bottom-[calc(var(--lht-safe-bottom)+6rem)] left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#120606]/90 border border-[#FF1E1E]/40 font-mono text-[9px] text-[#FF5E00] animate-pulse">
           <span className="w-1.5 h-1.5 rounded-full bg-[#FF1E1E] animate-ping" />
           <span>ĐANG NGHE LỆNH GIỌNG NÓI...</span>
         </div>
       )}
 
       {newsSync.error && (
-        <div className="fixed bottom-24 right-3 z-40 px-3 py-1.5 rounded-lg bg-[#120606]/90 border border-[#FF1E1E]/40 font-mono text-[9px] text-[#FF5E00] max-w-[70%]">
+        <div className="fixed bottom-[calc(var(--lht-safe-bottom)+6rem)] right-3 z-40 px-3 py-1.5 rounded-lg bg-[#120606]/90 border border-[#FF1E1E]/40 font-mono text-[9px] text-[#FF5E00] max-w-[70%]">
           {newsSync.error}
         </div>
       )}

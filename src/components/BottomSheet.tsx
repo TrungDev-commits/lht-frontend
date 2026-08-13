@@ -47,7 +47,7 @@ export function BottomSheet({ isOpen, onClose, title, children }: BottomSheetPro
               </button>
             </div>
 
-            <div className="px-5 py-5">{children}</div>
+            <div className="px-5 pt-5 pb-[max(var(--lht-safe-bottom),1.25rem)]">{children}</div>
           </motion.div>
         </motion.div>
       )}

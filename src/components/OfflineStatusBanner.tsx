@@ -23,7 +23,7 @@ export const OfflineStatusBanner: React.FC = () => {
   if (isOnline) return null; // Không hiển thị khi có mạng online bình thường
 
   return (
-    <div className="fixed top-14 left-0 right-0 z-50 px-4 py-2 bg-amber-950/90 border-b border-amber-500/50 backdrop-blur-md text-amber-200 text-xs flex items-center justify-between shadow-lg">
+    <div className="fixed top-[calc(var(--lht-safe-top)+3.5rem)] left-0 right-0 z-50 px-4 py-2 bg-amber-950/90 border-b border-amber-500/50 backdrop-blur-md text-amber-200 text-xs flex items-center justify-between shadow-lg">
       <div className="flex items-center space-x-2">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>

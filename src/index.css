@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+:root {
+  --lht-safe-top: env(safe-area-inset-top, 0px);
+  --lht-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @keyframes lht-wave {
   0%, 100% {
     transform: scaleY(0.4);
