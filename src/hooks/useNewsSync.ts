@@ -18,6 +18,7 @@ export interface PipelineSummary {
   failed: number;
   errors: string[];
   sourcesProcessed: number;
+  quotaLimited: boolean;
 }
 
 export interface SyncState {
@@ -100,21 +101,34 @@ export function useNewsSync(): SyncState {
       });
 
       if (!pipelineResponse.ok) {
+        let serverError: string | undefined;
+        try {
+          const body = (await pipelineResponse.json()) as { error?: string };
+          serverError = body.error;
+        } catch {
+          serverError = undefined;
+        }
         throw new Error(
           pipelineResponse.status === 401
             ? 'Pipeline từ chối: thiếu bí mật X-LHT-Pipeline-Secret.'
-            : `Pipeline lỗi: HTTP ${pipelineResponse.status}`
+            : serverError || `Pipeline lỗi: HTTP ${pipelineResponse.status}`
         );
       }
 
       const pipeline = (await pipelineResponse.json()) as { success?: boolean; result?: PipelineSummary };
       const stored = await fetchTodayAndStore();
-      setError(null);
-      if (!stored && pipeline?.result) {
-        const { created, duplicatesSkipped, failed } = pipeline.result;
+      if (pipeline?.result?.quotaLimited) {
         setError(
-          `Pipeline xong: ${created} tin mới, ${duplicatesSkipped} trùng lặp, ${failed} lỗi — chưa có tin mới trên kênh.`
+          'Gemini đã cạn hạn mức AI (quota) — pipeline dừng sớm. Đã đồng bộ tin có sẵn, thử lại sau ít phút.'
         );
+      } else {
+        setError(null);
+        if (!stored && pipeline?.result) {
+          const { created, duplicatesSkipped, failed } = pipeline.result;
+          setError(
+            `Pipeline xong: ${created} tin mới, ${duplicatesSkipped} trùng lặp, ${failed} lỗi — chưa có tin mới trên kênh.`
+          );
+        }
       }
       return stored;
     } catch (err) {
