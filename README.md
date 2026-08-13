@@ -1,10 +1,10 @@
 # L.H.T Frontend
 
-> **L.H.T — Logical Heuristic Terminal** là trợ lý AI cá nhân kiểu J.A.R.V.I.S / Cyberpunk: PWA Sci-Fi Red HUD với engine **đánh thức bằng giọng nói** chạy nền, **offline-first**, pipeline tin tức tự động và tích hợp IoT. React 19 + Vite 8 + Tailwind CSS v4, deploy lên **Netlify**.
+> **L.H.T — Logical Heuristic Terminal** là trợ lý AI cá nhân kiểu J.A.R.V.I.S / Cyberpunk: PWA Sci-Fi Red HUD với màn hình khởi động bằng nút bấm, **offline-first**, pipeline tin tức tự động và tích hợp IoT. React 19 + Vite 8 + Tailwind CSS v4, deploy lên **Netlify**.
 
 ## Tính năng
 
-- **Wake word tiếng Việt**: `Dậy đi L.H.T` / `Dậy đi J.A.R.V.I.S` + voice print (Web Audio `AnalyserNode`).
+- **Khởi động bằng nút bấm**: màn hình `IDLE_SLEEP` có nút **KHỞI ĐỘNG J.A.R.V.I.S** — nhấn để đánh thức hệ thống (thay cho wake word giọng nói).
 - **Drive Mode**: HUD đỏ AMOLED, TTS đọc tin, cử chỉ chạm/vuốt, bookmark "đạn dược".
 - **X-Ray Mode**: graph 3D tương tác (node phần cứng ↔ Web Dev), chế độ họp R&D → `POST /api/ai/meeting-note`.
 - **Debate Mode**: L.H.T đặt câu hỏi phản biện → mic 10s → chấm điểm.
@@ -18,7 +18,7 @@
 src/
 ├── config/api.ts        # API_BASE_URL từ VITE_API_BASE_URL + helper apiUrl()
 ├── db/indexedDB.ts      # Dexie DB — nguồn dữ liệu DUY NHẤT
-├── hooks/               # useWakeWord, useVoiceSTT, useSpeechTTS, useMediaSession, useNewsSync...
+├── hooks/               # useVoiceSTT, useSpeechTTS, useMediaSession, useNewsSync...
 ├── views/               # DriveMode, XRayMode, PreferencesRadar
 ├── components/          # HUD*, HologramCarousel, DebatePanel, BottomSheet...
 └── main.tsx             # registerSW({ immediate: true })

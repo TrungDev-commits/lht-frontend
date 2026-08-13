@@ -10,7 +10,6 @@ import { IdleSleepScreen } from './components/IdleSleepScreen';
 import { HologramCarousel } from './components/HologramCarousel';
 import { DebatePanel } from './components/DebatePanel';
 import { OfflineStatusBanner } from './components/OfflineStatusBanner';
-import { useWakeWord } from './hooks/useWakeWord';
 import { useVoiceSTT, type VoiceCommandEvent } from './hooks/useVoiceSTT';
 import { useSpeechTTS } from './hooks/useSpeechTTS';
 import { useNewsSync } from './hooks/useNewsSync';
@@ -24,7 +23,6 @@ const PreferencesRadar = lazy(() =>
   import('./views/PreferencesRadar').then((m) => ({ default: m.PreferencesRadar }))
 );
 
-const WAKE_WORD_REGEX = /dậy đi (jarvis|lht)/i;
 const AUTO_SLEEP_DELAY_MS = 180_000;
 
 export default function App() {
@@ -79,12 +77,6 @@ export default function App() {
     setCurrentView('DRIVE');
   }, [clearSleepTimer, speakGreeting]);
 
-  const handleUnauthorized = useCallback(() => {
-    tts.stop();
-    tts.play('Truy cập bị từ chối.');
-    playHudSound('alert');
-  }, [tts]);
-
   const handleSleep = useCallback(() => {
     clearSleepTimer();
     tts.stop();
@@ -92,15 +84,6 @@ export default function App() {
     setIsGalleryOpen(false);
     setLifecycle('IDLE_SLEEP');
   }, [clearSleepTimer, tts]);
-
-  const wakeWord = useWakeWord({
-    enabled: lifecycle === 'IDLE_SLEEP',
-    wakeRegex: WAKE_WORD_REGEX,
-    onWake: handleWake,
-    onUnauthorized: handleUnauthorized,
-    language: 'vi-VN',
-    voicePrintEnabled: true,
-  });
 
   const handleVoiceCommand = useCallback(
     (event: VoiceCommandEvent) => {
@@ -218,14 +201,7 @@ export default function App() {
     .map((item) => ({ keyword: item.keyword, text: item.icebreaker }));
 
   if (lifecycle === 'IDLE_SLEEP') {
-    return (
-      <IdleSleepScreen
-        supported={wakeWord.supported}
-        listening={wakeWord.listening}
-        error={wakeWord.error}
-        onTapWake={handleWake}
-      />
-    );
+    return <IdleSleepScreen onStart={handleWake} />;
   }
 
   return (
