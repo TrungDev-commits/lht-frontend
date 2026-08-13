@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bluetooth, ShieldCheck, Volume2, VolumeX, Mic, Activity, Radio, Moon } from 'lucide-react';
+import { Bluetooth, ShieldCheck, Volume2, VolumeX, Mic, MicOff, Activity, Radio, Moon, RefreshCw, SquareTerminal } from 'lucide-react';
 import { playHudSound } from '../utils/audioSynth';
 
 interface HUDHeaderProps {
@@ -7,6 +7,12 @@ interface HUDHeaderProps {
   audioMuted: boolean;
   onToggleAudioMute: () => void;
   onGoToSleep: () => void;
+  voiceListening: boolean;
+  voiceSupported: boolean;
+  onToggleVoice: () => void;
+  syncing: boolean;
+  onRefreshNews: () => void;
+  lastSyncedAt: number | null;
 }
 
 export const HUDHeader: React.FC<HUDHeaderProps> = ({
@@ -14,6 +20,12 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
   audioMuted,
   onToggleAudioMute,
   onGoToSleep,
+  voiceListening,
+  voiceSupported,
+  onToggleVoice,
+  syncing,
+  onRefreshNews,
+  lastSyncedAt,
 }) => {
   const [timeStr, setTimeStr] = useState<string>('');
   const [btSynced, setBtSynced] = useState<boolean>(true);
@@ -70,14 +82,14 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
           title="Bấm để toggle đồng bộ tai nghe"
         >
           <Bluetooth className={`w-3.5 h-3.5 ${btSynced ? 'text-[#FF1E1E] animate-pulse' : 'text-gray-500'}`} />
-          <span className="text-[10px] font-mono tracking-wider font-semibold uppercase">
+          <span className="hidden sm:inline text-[10px] font-mono tracking-wider font-semibold uppercase">
             {btSynced ? 'ĐÃ ĐỒNG BỘ TAI NGHE' : 'NGẮN KẾT NỐI TAI NGHE'}
           </span>
         </button>
       </div>
 
-      {/* Right: Time, Audio Toggle, Mic Trigger */}
-      <div className="flex items-center gap-2">
+      {/* Right: Time, Refresh, Voice, Audio Toggle, Terminal, Sleep */}
+      <div className="flex items-center gap-1.5">
         {/* Time Display */}
         <div className="hidden sm:flex items-center gap-1 font-mono text-[11px] text-[#FF5E00] bg-[#120808] px-2 py-0.5 rounded border border-[#FF1E1E]/20">
           <Radio className="w-3 h-3 text-[#FF1E1E] animate-spin" />
@@ -100,16 +112,64 @@ export const HUDHeader: React.FC<HUDHeaderProps> = ({
           {audioMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
         </button>
 
-        {/* Mic Voice Quick Trigger */}
+        {/* Manual News Refresh */}
+        <button
+          onClick={() => {
+            playHudSound('click');
+            onRefreshNews();
+          }}
+          disabled={syncing}
+          className={`p-1.5 rounded-lg border transition-all ${
+            syncing
+              ? 'bg-[#180808] border-[#FF1E1E]/30 text-[#FF5E00]'
+              : 'bg-[#180808] border-[#FF1E1E]/30 text-gray-400 hover:text-[#FF5E00]'
+          }`}
+          title={
+            lastSyncedAt
+              ? `Cập nhật bản tin thủ công — lần cuối ${new Date(lastSyncedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+              : 'Cập nhật bản tin thủ công'
+          }
+        >
+          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+        </button>
+
+        {/* Hands-free Voice Command Toggle */}
+        <button
+          onClick={() => {
+            playHudSound('voice');
+            onToggleVoice();
+          }}
+          disabled={!voiceSupported}
+          className={`relative p-1.5 rounded-lg border transition-all ${
+            voiceListening
+              ? 'bg-gradient-to-r from-[#FF1E1E] to-[#FF0055] text-white shadow-[0_0_12px_rgba(255,30,30,0.6)]'
+              : 'bg-[#180808] border-[#FF1E1E]/30 text-[#FF5E00] hover:text-[#FF1E1E]'
+          } ${!voiceSupported ? 'opacity-40 cursor-not-allowed' : ''}`}
+          title={
+            voiceListening
+              ? 'Đang nghe lệnh giọng nói liên tục — bấm để tắt'
+              : voiceSupported
+              ? 'Bật điều khiển giọng nói (nói: "tiếp theo", "lưu đạn", "ngủ"... )'
+              : 'Trình duyệt không hỗ trợ nhận dạng giọng nói'
+          }
+        >
+          {voiceListening ? (
+            <Mic className="w-4 h-4 animate-pulse" />
+          ) : (
+            <MicOff className="w-4 h-4" />
+          )}
+        </button>
+
+        {/* AI Terminal / Text Command */}
         <button
           onClick={() => {
             playHudSound('voice');
             onOpenVoiceModal();
           }}
-          className="relative group p-1.5 rounded-lg bg-gradient-to-r from-[#FF1E1E] to-[#FF0055] text-white shadow-[0_0_12px_rgba(255,30,30,0.5)] hover:scale-105 transition-all"
-          title="Mở Lệnh Giọng Nói Vietnamese"
+          className="p-1.5 rounded-lg bg-[#180808] border border-[#FF1E1E]/30 text-[#FF5E00] hover:text-white transition-all"
+          title="Hỏi L.H.T / lệnh văn bản"
         >
-          <Mic className="w-4 h-4 animate-pulse" />
+          <SquareTerminal className="w-4 h-4" />
         </button>
 
         {/* Sleep Mode Trigger */}

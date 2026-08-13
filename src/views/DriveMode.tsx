@@ -1,19 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   AnimatePresence,
   motion,
   useMotionValue,
   useTransform,
 } from 'motion/react';
-import { Volume2, VolumeX, Bookmark, ChevronLeft, ChevronRight, Radio, AlertOctagon, ArrowDown, Hand, CheckCircle2, Sparkles } from 'lucide-react';
+import { Volume2, VolumeX, Bookmark, ChevronLeft, ChevronRight, Radio, AlertOctagon, ArrowDown, Hand, CheckCircle2, Sparkles, RefreshCw } from 'lucide-react';
 import type { SyncedNews } from '../db/indexedDB';
 import { useSpeechTTS } from '../hooks/useSpeechTTS';
 import { useMediaSession } from '../hooks/useMediaSession';
+
+export interface DriveModeHandle {
+  goNext: () => void;
+  goPrev: () => void;
+  toggleBookmark: () => void;
+}
 
 export interface DriveModeProps {
   items: SyncedNews[];
   onToggleBookmark: (id: string, bookmarked: boolean) => void;
   onOpenGallery: (item: SyncedNews) => void;
+  onRefresh?: () => void;
+  syncing?: boolean;
 }
 
 const WAVE_BARS = [40, 70, 35, 90, 60, 100, 45, 80, 55, 95, 30, 75, 50, 85, 40, 65];
@@ -112,7 +120,10 @@ function RpmRing({ value, max = 9000, size = 64 }: { value: number; max?: number
   );
 }
 
-export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeProps) {
+export const DriveMode = forwardRef<DriveModeHandle, DriveModeProps>(function DriveMode(
+  { items, onToggleBookmark, onOpenGallery, onRefresh, syncing },
+  ref
+) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flashFeedback, setFlashFeedback] = useState(false);
   const [speed, setSpeed] = useState(68);
@@ -186,6 +197,16 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
     triggerBookmark();
   }, [triggerBookmark]);
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      goNext,
+      goPrev,
+      toggleBookmark: triggerBookmark,
+    }),
+    [goNext, goPrev, triggerBookmark]
+  );
+
   const onSelectFromMediaSession = useCallback(
     (action: 'play' | 'pause' | 'next' | 'prev' | 'stop') => {
       switch (action) {
@@ -235,8 +256,19 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
         <div className="lht-chamfer-lg relative bg-[#0c0606]/70 border border-[#FF1E1E]/25 p-8 flex flex-col items-center gap-4 drop-shadow-[0_0_20px_rgba(255,30,30,0.15)]">
           <HUDCorners />
           <div className="w-20 h-20 rounded-full border-2 border-[#FF1E1E]/40 border-t-[#FF1E1E] animate-spin" />
-          <p className="font-mono text-sm text-[#FF5E00] tracking-widest">ĐANG ĐỒNG BỘ BẢN TIN...</p>
+          <p className="font-mono text-sm text-[#FF5E00] tracking-widest">
+            {syncing ? 'ĐANG ĐỒNG BỘ BẢN TIN...' : 'CHƯA CÓ BẢN TIN TRONG KHO'}
+          </p>
           <p className="text-xs text-gray-500">Chưa có tin tức hôm nay trong bộ nhớ cục bộ.</p>
+          {onRefresh && !syncing && (
+            <button
+              onClick={onRefresh}
+              className="lht-chamfer inline-flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#FF1E1E] to-[#8B0000] text-white font-mono text-xs font-bold drop-shadow-[0_0_15px_rgba(255,30,30,0.4)] hover:scale-105 active:scale-95 transition-all"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              CẬP NHẬT BẢN TIN
+            </button>
+          )}
         </div>
       </div>
     );
@@ -447,4 +479,4 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
       </div>
     </div>
   );
-}
+});

@@ -16,7 +16,7 @@ import { useNewsSync } from './hooks/useNewsSync';
 import { playHudSound } from './utils/audioSynth';
 import { setBookmarked, type SyncedNews } from './db/indexedDB';
 import { apiUrl } from './config/api';
-import { DriveMode } from './views/DriveMode';
+import { DriveMode, type DriveModeHandle } from './views/DriveMode';
 import { XRayMode } from './views/XRayMode';
 
 const PreferencesRadar = lazy(() =>
@@ -33,6 +33,8 @@ export default function App() {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [debateItem, setDebateItem] = useState<SyncedNews | null>(null);
+
+  const driveModeRef = useRef<DriveModeHandle>(null);
 
   const newsSync = useNewsSync();
   const tts = useSpeechTTS();
@@ -93,12 +95,15 @@ export default function App() {
       switch (type) {
         case 'NEXT':
           setCurrentView('DRIVE');
+          driveModeRef.current?.goNext();
           break;
         case 'PREV':
-          setCurrentView((prev) => (prev === 'DRIVE' ? prev : 'DRIVE'));
+          setCurrentView('DRIVE');
+          driveModeRef.current?.goPrev();
           break;
         case 'BOOKMARK':
-          setCurrentView('AMMO');
+          setCurrentView('DRIVE');
+          driveModeRef.current?.toggleBookmark();
           break;
         case 'GALLERY': {
           const first = newsSync.items[0];
@@ -128,11 +133,19 @@ export default function App() {
   const voiceMuted = audioMuted || tts.isSpeaking;
 
   const voiceSTT = useVoiceSTT({
-    enabled: lifecycle === 'ACTIVE_HUD',
+    enabled: lifecycle === 'ACTIVE_HUD' && !isVoiceModalOpen,
     muted: voiceMuted,
     onCommand: handleVoiceCommand,
     language: 'vi-VN',
   });
+
+  const handleToggleVoice = useCallback(() => {
+    if (voiceSTT.listening) {
+      voiceSTT.stop();
+    } else {
+      voiceSTT.start();
+    }
+  }, [voiceSTT.listening, voiceSTT.start, voiceSTT.stop]);
 
   const handleToggleBookmark = useCallback(async (id: string, bookmarked: boolean) => {
     await setBookmarked(id, bookmarked);
@@ -219,16 +232,28 @@ export default function App() {
           setAudioMuted(next);
           if (next) tts.stop();
         }}
-        onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
+        onOpenVoiceModal={() => {
+          voiceSTT.stop();
+          setIsVoiceModalOpen(true);
+        }}
+        voiceListening={voiceSTT.listening}
+        voiceSupported={voiceSTT.supported}
+        onToggleVoice={handleToggleVoice}
+        syncing={newsSync.loading}
+        onRefreshNews={() => void newsSync.sync()}
+        lastSyncedAt={newsSync.lastSyncedAt}
         onGoToSleep={handleSleep}
       />
 
       <main className="relative z-10 w-full max-w-lg mx-auto pt-2 pb-[calc(var(--lht-safe-bottom)+5rem)]">
         {currentView === 'DRIVE' && (
           <DriveMode
+            ref={driveModeRef}
             items={newsSync.items}
             onToggleBookmark={handleToggleBookmark}
             onOpenGallery={handleOpenGallery}
+            onRefresh={() => void newsSync.sync()}
+            syncing={newsSync.loading}
           />
         )}
 
@@ -296,6 +321,13 @@ export default function App() {
         <div className="fixed bottom-[calc(var(--lht-safe-bottom)+6rem)] left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#120606]/90 border border-[#FF1E1E]/40 font-mono text-[9px] text-[#FF5E00] animate-pulse">
           <span className="w-1.5 h-1.5 rounded-full bg-[#FF1E1E] animate-ping" />
           <span>ĐANG NGHE LỆNH GIỌNG NÓI...</span>
+        </div>
+      )}
+
+      {(voiceSTT.error || !voiceSTT.supported) && lifecycle === 'ACTIVE_HUD' && (
+        <div className="fixed bottom-[calc(var(--lht-safe-bottom)+6rem)] left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#120606]/90 border border-[#FF5E00]/30 font-mono text-[9px] text-gray-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FF5E00]" />
+          <span>{!voiceSTT.supported ? 'TRÌNH DUYỆT KHÔNG HỖ TRỢ GIỌNG NÓI' : `GIỌNG NÓI: ${voiceSTT.error}`}</span>
         </div>
       )}
 

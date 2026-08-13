@@ -19,6 +19,8 @@ export interface UseVoiceSTTResult {
   listening: boolean;
   transcript: string;
   error: string | null;
+  start: () => void;
+  stop: () => void;
 }
 
 const COMMAND_PATTERNS: Array<{ type: VoiceCommandType; pattern: RegExp }> = [
@@ -49,6 +51,8 @@ export function useVoiceSTT(options: UseVoiceSTTOptions): UseVoiceSTTResult {
   const onCommandRef = useRef(onCommand);
   const sessionBufferRef = useRef('');
   const restartTimerRef = useRef<number | null>(null);
+  const manualStopRef = useRef(false);
+  const prevEnabledRef = useRef(enabled);
 
   const [supported] = useState<boolean>(() => getRecognitionConstructor() !== null);
   const [listening, setListening] = useState(false);
@@ -68,7 +72,7 @@ export function useVoiceSTT(options: UseVoiceSTTOptions): UseVoiceSTTResult {
 
   const startRecognition = useCallback(() => {
     const recognition = recognitionRef.current;
-    if (!recognition || !enabledRef.current || mutedRef.current) return;
+    if (!recognition || !enabledRef.current || mutedRef.current || manualStopRef.current) return;
     try {
       recognition.start();
     } catch {
@@ -100,6 +104,16 @@ export function useVoiceSTT(options: UseVoiceSTTOptions): UseVoiceSTTResult {
     return 'NONE';
   }, []);
 
+  const start = useCallback(() => {
+    manualStopRef.current = false;
+    startRecognition();
+  }, [startRecognition]);
+
+  const stop = useCallback(() => {
+    manualStopRef.current = true;
+    stopRecognition();
+  }, [stopRecognition]);
+
   useEffect(() => {
     if (!supported) {
       setError('Trình duyệt không hỗ trợ nhận dạng giọng nói.');
@@ -123,7 +137,7 @@ export function useVoiceSTT(options: UseVoiceSTTOptions): UseVoiceSTTResult {
     recognition.onend = () => {
       listeningRef.current = false;
       setListening(false);
-      if (enabledRef.current && !mutedRef.current) {
+      if (enabledRef.current && !mutedRef.current && !manualStopRef.current) {
         clearRestartTimer();
         restartTimerRef.current = window.setTimeout(() => {
           restartTimerRef.current = null;
@@ -185,6 +199,11 @@ export function useVoiceSTT(options: UseVoiceSTTOptions): UseVoiceSTTResult {
   }, [supported, language, clearRestartTimer, matchCommand, startRecognition]);
 
   useEffect(() => {
+    if (enabled && !prevEnabledRef.current) {
+      manualStopRef.current = false;
+    }
+    prevEnabledRef.current = enabled;
+
     if (muted) {
       stopRecognition();
       setTranscript('');
@@ -210,5 +229,5 @@ export function useVoiceSTT(options: UseVoiceSTTOptions): UseVoiceSTTResult {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [startRecognition]);
 
-  return { supported, listening, transcript, error };
+  return { supported, listening, transcript, error, start, stop };
 }
