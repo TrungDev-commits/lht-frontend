@@ -1,0 +1,20 @@
+# dependencies
+node_modules
+
+# build output
+dist
+
+# local env files
+.env
+.env.local
+
+# local Netlify folder
+.netlify
+
+# logs
+*.log
+npm-debug.log*
+
+# editor
+.vscode/
+.idea/

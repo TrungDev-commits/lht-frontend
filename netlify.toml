@@ -1,0 +1,14 @@
+[build]
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback — mọi route trả về index.html (PWA app shell).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API gọi qua VITE_API_BASE_URL (Render) — không còn functions tại đây.

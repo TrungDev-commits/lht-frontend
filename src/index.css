@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@keyframes lht-wave {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.wave-bar {
+  transform-origin: bottom;
+  animation: lht-wave 0.7s ease-in-out infinite;
+}
+
+@keyframes lht-pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.lht-glow-pulse {
+  animation: lht-pulse-glow 1.6s ease-in-out infinite;
+}
