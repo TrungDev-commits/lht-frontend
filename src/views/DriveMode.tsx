@@ -5,7 +5,7 @@ import {
   useMotionValue,
   useTransform,
 } from 'motion/react';
-import { Volume2, VolumeX, Bookmark, ChevronLeft, ChevronRight, Radio, AlertOctagon, ArrowDown, Hand, CheckCircle2 } from 'lucide-react';
+import { Volume2, VolumeX, Bookmark, ChevronLeft, ChevronRight, Radio, AlertOctagon, ArrowDown, Hand, CheckCircle2, Sparkles } from 'lucide-react';
 import type { SyncedNews } from '../db/indexedDB';
 import { useSpeechTTS } from '../hooks/useSpeechTTS';
 import { useMediaSession } from '../hooks/useMediaSession';
@@ -17,6 +17,100 @@ export interface DriveModeProps {
 }
 
 const WAVE_BARS = [40, 70, 35, 90, 60, 100, 45, 80, 55, 95, 30, 75, 50, 85, 40, 65];
+
+function HUDCorners({ className = '' }: { className?: string }) {
+  return (
+    <>
+      <span className={`lht-corner lht-corner-tl ${className}`} />
+      <span className={`lht-corner lht-corner-tr ${className}`} />
+      <span className={`lht-corner lht-corner-bl ${className}`} />
+      <span className={`lht-corner lht-corner-br ${className}`} />
+    </>
+  );
+}
+
+function SpeedGauge({ value, max = 160, size = 96 }: { value: number; max?: number; size?: number }) {
+  const cx = 60;
+  const cy = 60;
+  const r = 48;
+  const aMin = 140;
+  const aMax = 40;
+  const clamp = Math.max(0, Math.min(max, value));
+  const angle = aMin - (clamp / max) * (aMin - aMax);
+
+  const pt = (deg: number, radius: number) => {
+    const rad = (deg * Math.PI) / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+  };
+  const arcPath = (fromDeg: number, toDeg: number) => {
+    const f = pt(fromDeg, r);
+    const t = pt(toDeg, r);
+    return `M ${f.x.toFixed(2)} ${f.y.toFixed(2)} A ${r} ${r} 0 0 1 ${t.x.toFixed(2)} ${t.y.toFixed(2)}`;
+  };
+  const ticks = Array.from({ length: 11 }, (_, i) => {
+    const a = aMin - (i / 10) * (aMin - aMax);
+    const outer = pt(a, r);
+    const inner = pt(a, r - (i % 5 === 0 ? 8 : 5));
+    return { x: outer.x, y: outer.y, ix: inner.x, iy: inner.y, major: i % 5 === 0 };
+  });
+
+  return (
+    <svg width={size} height={(size * 70) / 120} viewBox="0 0 120 70" fill="none" aria-hidden="true">
+      <path d={arcPath(aMin, aMax)} stroke="rgba(255,94,0,0.25)" strokeWidth="3" strokeLinecap="round" />
+      <path d={arcPath(aMin, angle)} stroke="#FF5E00" strokeWidth="3" strokeLinecap="round" />
+      {ticks.map((t, i) => (
+        <line
+          key={i}
+          x1={t.x.toFixed(2)}
+          y1={t.y.toFixed(2)}
+          x2={t.ix.toFixed(2)}
+          y2={t.iy.toFixed(2)}
+          stroke={t.major ? 'rgba(255,190,90,0.9)' : 'rgba(255,94,0,0.5)'}
+          strokeWidth={t.major ? 1.6 : 1}
+        />
+      ))}
+      <g className="lht-needle" style={{ transform: `rotate(${angle - 270}deg)` }}>
+        <line x1={cx} y1={cy} x2={cx} y2={cy - r + 12} stroke="#FF5E00" strokeWidth="2" strokeLinecap="round" />
+        <circle cx={cx} cy={cy} r="3.5" fill="#FFE3A3" />
+      </g>
+    </svg>
+  );
+}
+
+function RpmRing({ value, max = 9000, size = 64 }: { value: number; max?: number; size?: number }) {
+  const r = 30;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(1, value / max));
+  return (
+    <svg width={size} height={size} viewBox="0 0 80 80" aria-hidden="true">
+      <circle cx="40" cy="40" r={r} fill="none" stroke="rgba(255,30,30,0.2)" strokeWidth="4" />
+      <circle
+        className="lht-arc-progress"
+        cx="40"
+        cy="40"
+        r={r}
+        fill="none"
+        stroke="#FF1E1E"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - pct)}
+        transform="rotate(-90 40 40)"
+      />
+      <text
+        x="40"
+        y="45"
+        textAnchor="middle"
+        fill="#FF5E00"
+        fontSize="16"
+        fontWeight="800"
+        fontFamily="ui-monospace, monospace"
+      >
+        {(value / 1000).toFixed(1)}k
+      </text>
+    </svg>
+  );
+}
 
 export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -138,9 +232,12 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
   if (items.length === 0) {
     return (
       <div className="relative w-full min-h-[calc(100vh-120px)] flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <div className="w-20 h-20 rounded-full border-2 border-[#FF1E1E]/40 border-t-[#FF1E1E] animate-spin" />
-        <p className="font-mono text-sm text-[#FF5E00] tracking-widest">ĐANG ĐỒNG BỘ BẢN TIN...</p>
-        <p className="text-xs text-gray-500">Chưa có tin tức hôm nay trong bộ nhớ cục bộ.</p>
+        <div className="lht-chamfer-lg relative bg-[#0c0606]/70 border border-[#FF1E1E]/25 p-8 flex flex-col items-center gap-4 drop-shadow-[0_0_20px_rgba(255,30,30,0.15)]">
+          <HUDCorners />
+          <div className="w-20 h-20 rounded-full border-2 border-[#FF1E1E]/40 border-t-[#FF1E1E] animate-spin" />
+          <p className="font-mono text-sm text-[#FF5E00] tracking-widest">ĐANG ĐỒNG BỘ BẢN TIN...</p>
+          <p className="text-xs text-gray-500">Chưa có tin tức hôm nay trong bộ nhớ cục bộ.</p>
+        </div>
       </div>
     );
   }
@@ -164,28 +261,45 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
         )}
       </AnimatePresence>
 
-      <div className="w-full max-w-md grid grid-cols-3 gap-2 py-2 px-3 rounded-2xl bg-[#0c0606]/80 backdrop-blur-md border border-[#FF1E1E]/25 shadow-[0_0_15px_rgba(255,30,30,0.15)] font-mono text-xs">
-        <div className="flex flex-col items-center justify-center p-1 border-r border-[#FF1E1E]/20">
-          <div className="text-[9px] text-gray-400 tracking-wider">TỐC ĐỘ</div>
-          <div className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E1E] to-[#FF5E00]">
-            {speed} <span className="text-[10px] text-gray-400 font-normal">KM/H</span>
-          </div>
+      <div className="w-full max-w-md">
+        <div className="flex items-center justify-between font-mono text-[9px] tracking-[0.2em] text-[#FF5E00]/80 mb-1.5 px-1">
+          <span className="flex items-center gap-1.5">
+            <span className="relative inline-flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-[#FF1E1E] opacity-60 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#FF0055]" />
+            </span>
+            ARC REACTOR ONLINE
+          </span>
+          <span className="lht-blink hidden sm:inline">SUIT L.H.T // J.A.R.V.I.S</span>
+          <span>MISSION {currentIndex + 1}/{items.length}</span>
         </div>
-        <div className="flex flex-col items-center justify-center p-1 border-r border-[#FF1E1E]/20">
-          <div className="text-[9px] text-gray-400 tracking-wider">VÒNG TUA</div>
-          <div className="text-sm font-bold text-[#FF5E00]">{rpm} RPM</div>
-        </div>
-        <div className="flex flex-col items-center justify-center p-1">
-          <div className="text-[9px] text-gray-400 tracking-wider">BẢN TIN</div>
-          <div className="text-sm font-bold text-[#FF0055]">
-            {currentIndex + 1}/{items.length}
-          </div>
-        </div>
-      </div>
 
-      <div className="w-full max-w-md my-1 flex items-center justify-center gap-2 font-mono text-[9px] text-[#FF5E00]/80 bg-[#120808]/80 py-1.5 px-3 rounded-full border border-[#FF1E1E]/30 shadow-[0_0_10px_rgba(255,30,30,0.15)]">
-        <Hand className="w-3.5 h-3.5 text-[#FF1E1E] animate-pulse" />
-        <span>VUỐT NGANG: ĐỔI TIN • VUỐT XUỐNG: LƯU ĐẠN • CHẠM: BẬT/TẮT GIỌNG NÓI</span>
+        <div className="lht-chamfer-lg relative bg-[#0c0606]/85 border border-[#FF1E1E]/30 drop-shadow-[0_0_20px_rgba(255,30,30,0.2)] px-3 pt-2 pb-2.5">
+          <HUDCorners />
+          <div className="flex items-center justify-around">
+            <div className="flex flex-col items-center">
+              <SpeedGauge value={speed} />
+              <div className="mt-0.5 font-mono text-[10px] font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E1E] to-[#FF5E00]">
+                {speed} <span className="text-[8px] text-gray-400 font-normal">KM/H</span>
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <RpmRing value={rpm} />
+              <div className="mt-0.5 font-mono text-[9px] text-gray-400 tracking-widest">VÒNG TUA</div>
+            </div>
+            <div className="flex flex-col items-start gap-1 font-mono text-[8px] text-[#FF5E00]/80 tracking-wider">
+              <span className="text-gray-500 tracking-[0.25em] mb-0.5">THÔNG SỐ</span>
+              <span><span className="text-[#FF1E1E]">▸</span> SUIT 100%</span>
+              <span><span className="text-[#FF1E1E]">▸</span> NANO READY</span>
+              <span><span className="text-[#FF1E1E]">▸</span> SYS.SYNC 97%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="lht-chamfer relative w-full mt-2 flex items-center justify-center gap-2 font-mono text-[9px] text-[#FF5E00]/80 bg-[#120808]/85 border border-[#FF1E1E]/25 px-3 py-1.5">
+          <Hand className="w-3.5 h-3.5 text-[#FF1E1E] animate-pulse" />
+          <span>VUỐT NGANG: ĐỔI TIN • VUỐT XUỐNG: LƯU ĐẠN • CHẠM: GIỌNG NÓI</span>
+        </div>
       </div>
 
       <div className="w-full max-w-md my-auto flex flex-col items-center justify-center text-center relative py-4">
@@ -208,19 +322,26 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             className="w-full relative px-2 cursor-grab active:cursor-grabbing touch-pan-y"
           >
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1c0808] border border-[#FF1E1E]/40 text-[#FF5E00] text-[10px] font-mono tracking-widest font-bold uppercase mb-3 shadow-[0_0_10px_rgba(255,30,30,0.2)]">
-              <Radio className="w-3 h-3 text-[#FF1E1E] animate-pulse" />
-              <span>{currentItem.bookmarked ? 'ĐÃ LƯU' : 'TIN MỚI'}</span>
+            <div className="inline-flex items-center mb-3">
+              <span className="lht-hex-chip inline-flex items-center gap-1.5 px-3 py-1 bg-[#1c0808] border border-[#FF1E1E]/40 text-[#FF5E00] text-[10px] font-mono tracking-widest font-bold uppercase drop-shadow-[0_0_10px_rgba(255,30,30,0.25)]">
+                <Radio className="w-3 h-3 text-[#FF1E1E] animate-pulse" />
+                <span>{currentItem.bookmarked ? 'ĐÃ LƯU' : 'TIN MỚI'}</span>
+              </span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-none uppercase text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E1E] via-[#FF5E00] to-[#FF0055] drop-shadow-[0_0_20px_rgba(255,30,30,0.6)] my-2 transition-transform">
               {currentItem.keyword}
             </h1>
 
-            <div className="mt-4 p-3.5 rounded-xl bg-[#0e0707]/90 border border-[#FF1E1E]/30 backdrop-blur-md shadow-[0_0_20px_rgba(255,30,30,0.15)] max-w-sm mx-auto text-left">
-              <div className="text-[11px] font-mono text-[#FF5E00] uppercase tracking-wider mb-1 font-bold flex items-center gap-1">
-                <AlertOctagon className="w-3.5 h-3.5 text-[#FF1E1E]" />
-                <span>ẨN DỤ WEB DEV L.H.T</span>
+            <div className="lht-chamfer-lg relative max-w-sm mx-auto text-left mt-4 p-3.5 bg-[#0e0707]/95 border border-[#FF1E1E]/35 drop-shadow-[0_0_20px_rgba(255,30,30,0.2)]">
+              <HUDCorners />
+              <span className="lht-scanline" />
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="text-[11px] font-mono text-[#FF5E00] uppercase tracking-wider font-bold flex items-center gap-1">
+                  <AlertOctagon className="w-3.5 h-3.5 text-[#FF1E1E]" />
+                  <span>ẨN DỤ WEB DEV</span>
+                </div>
+                <span className="text-[8px] font-mono text-gray-500 tracking-[0.2em]">NANOTECH.ANALYSIS</span>
               </div>
               <p className="text-xs text-gray-300 leading-relaxed">
                 {currentItem.web_dev_analogy || 'Chưa có phân tích ẩn dụ.'}
@@ -228,8 +349,12 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
             </div>
 
             {currentItem.icebreaker && (
-              <div className="mt-3 px-3 py-2 rounded-lg bg-[#0a0f0a]/80 border border-[#00FF88]/20 text-[11px] text-[#00FF88]/90 font-mono">
-                💬 {currentItem.icebreaker}
+              <div className="lht-chamfer relative mt-3 px-3 py-2 bg-[#0a0f0a]/85 border border-[#00FF88]/25 text-[11px] text-[#00FF88]/90 font-mono drop-shadow-[0_0_12px_rgba(0,255,136,0.15)]">
+                <div className="flex items-center gap-1.5 mb-0.5 text-[8px] tracking-[0.2em] text-[#00FF88]/70 font-bold">
+                  <Sparkles className="w-3 h-3" />
+                  <span>HOLO NOTE // ICEBREAKER</span>
+                </div>
+                {currentItem.icebreaker}
               </div>
             )}
 
@@ -238,7 +363,7 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
                 e.stopPropagation();
                 onOpenGallery(currentItem);
               }}
-              className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#180a0a] border border-[#FF1E1E]/30 text-[10px] font-mono text-[#FF5E00] hover:text-white transition-all"
+              className="lht-chamfer mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#180a0a] border border-[#FF1E1E]/35 text-[10px] font-mono text-[#FF5E00] hover:text-white transition-all drop-shadow-[0_0_10px_rgba(255,30,30,0.15)]"
             >
               <ArrowDown className="w-3 h-3 rotate-180" />
               MỞ THƯ VIỆN HÌNH ẢNH
@@ -278,8 +403,13 @@ export function DriveMode({ items, onToggleBookmark, onOpenGallery }: DriveModeP
       <div className="w-full max-w-md px-2">
         <div
           onClick={togglePlayPause}
-          className="cursor-pointer p-3 rounded-2xl bg-[#0c0606]/90 border border-[#FF1E1E]/30 backdrop-blur-md shadow-[0_0_20px_rgba(255,30,30,0.2)] flex flex-col items-center"
+          className="lht-chamfer-lg relative cursor-pointer p-3 bg-[#0c0606]/90 border border-[#FF1E1E]/30 backdrop-blur-md drop-shadow-[0_0_20px_rgba(255,30,30,0.2)] flex flex-col items-center"
         >
+          <HUDCorners />
+          <div className="w-full flex items-center justify-between px-1 mb-1 font-mono text-[8px] tracking-[0.2em] text-gray-500">
+            <span>REACTOR // AUDIO</span>
+            <span className="text-[#FF5E00]">L.H.T.VOICE</span>
+          </div>
           <div className="flex items-end justify-center gap-1.5 h-8 w-full px-2">
             {WAVE_BARS.map((height, i) => (
               <div
