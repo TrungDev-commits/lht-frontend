@@ -23,7 +23,10 @@ export const VoiceControlModal: React.FC<VoiceControlModalProps> = ({
   const [inputText, setInputText] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sttError, setSttError] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
+  const isListeningRef = useRef(false);
+  const shouldRestartRef = useRef(false);
 
   // Quick Preset Vietnamese Prompts for Speed & Convenience
   const PRESET_PROMPTS = [
@@ -35,65 +38,92 @@ export const VoiceControlModal: React.FC<VoiceControlModalProps> = ({
 
   // Initialize Web Speech Recognition if supported
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (typeof window === 'undefined') return;
 
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = 'vi-VN';
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-        recognition.onstart = () => {
-          setIsListening(true);
-        };
-
-        recognition.onresult = (event: any) => {
-          let currentTranscript = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            currentTranscript += event.results[i][0].transcript;
-          }
-          setTranscript(currentTranscript);
-          setInputText(currentTranscript);
-        };
-
-        recognition.onerror = (event: any) => {
-          console.warn('Speech recognition error:', event.error);
-          setIsListening(false);
-        };
-
-        recognition.onend = () => {
-          setIsListening(false);
-        };
-
-        recognitionRef.current = recognition;
-      }
+    if (!SpeechRecognition) {
+      setSttError('Trình duyệt không hỗ trợ nhận dạng giọng nói.');
+      return;
     }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'vi-VN';
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      isListeningRef.current = true;
+      setIsListening(true);
+      setSttError(null);
+    };
+
+    recognition.onresult = (event: any) => {
+      let currentTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        currentTranscript += event.results[i][0].transcript;
+      }
+      setTranscript(currentTranscript);
+      setInputText(currentTranscript);
+    };
+
+    recognition.onerror = (event: any) => {
+      const code: string = event.error;
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        setSttError('Quyền micro bị từ chối. Vui lòng cấp quyền micro cho trang này.');
+        shouldRestartRef.current = false;
+      } else if (code === 'network') {
+        setSttError('Lỗi mạng khi kết nối dịch vụ nhận dạng.');
+      } else if (code === 'no-speech') {
+        // Không có giọng nói — bỏ qua, onend sẽ restart
+      } else if (code !== 'aborted') {
+        console.warn('[STT] error:', code);
+      }
+      isListeningRef.current = false;
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      isListeningRef.current = false;
+      setIsListening(false);
+      // Không restart — để user tự chủ động
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      shouldRestartRef.current = false;
+      try { recognition.abort(); } catch {}
+      recognitionRef.current = null;
+    };
   }, []);
 
   const startListening = () => {
+    if (isListeningRef.current) return; // Tránh gọi đúp
     playHudSound('voice');
     setTranscript('');
     setAiResponse('');
+    setSttError(null);
     if (recognitionRef.current) {
       try {
         recognitionRef.current.start();
       } catch (e) {
-        setIsListening(true);
+        console.warn('[STT] start error:', e);
       }
     } else {
-      setIsListening(true);
+      setSttError('Trình duyệt không hỗ trợ nhận dạng giọng nói.');
     }
   };
 
   const stopListening = () => {
     playHudSound('click');
+    shouldRestartRef.current = false;
+    isListeningRef.current = false;
     setIsListening(false);
     if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
+      try { recognitionRef.current.stop(); } catch {}
     }
   };
 
@@ -195,14 +225,23 @@ export const VoiceControlModal: React.FC<VoiceControlModalProps> = ({
             </button>
           </div>
 
-          {/* Vietnamese Feedback Indicator (REQUIRED: "ĐANG LẮNG NGHE SẾP...") */}
+          {/* Vietnamese Feedback Indicator */}
           <div className="mt-2 font-mono text-xs font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[#FF1E1E] via-[#FF5E00] to-[#FF0055] uppercase animate-pulse">
             {isListening
               ? 'ĐANG LẮNG NGHE SẾP... (NÓI TIẾNG VIỆT)'
               : loading
               ? 'L.H.T ĐANG PHÂN TÍCH QUY TRÌNH...'
+              : sttError
+              ? '⚠ LỖI MICRO'
               : 'CHẠM VÀO VÒNG TRÒN HOLOGRAPHIC ĐỂ PHÁT LỆNH'}
           </div>
+
+          {/* STT Error Display */}
+          {sttError && (
+            <div className="mt-2 px-4 py-2 rounded-xl bg-[#1a0505] border border-[#FF1E1E]/50 text-xs text-red-300 font-mono text-center">
+              {sttError}
+            </div>
+          )}
 
           {/* Transcript / Input display */}
           {inputText && (

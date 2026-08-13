@@ -71,6 +71,8 @@ function voiceScore(v: SpeechSynthesisVoice, langPrefix: string): number {
   if (langPrefix === 'vi') {
     const viNames = ['ban mai', 'hồng đào', 'hoaimy', 'linh', 'minh-quang', 'thu minh', 'chi minh', 'ngọc'];
     if (viNames.some((n) => name.includes(n))) score += 3;
+    // Ưu tiên voice vi-VN thay vì vi-VN-x-...
+    if (lang === 'vi-vn') score += 2;
   } else {
     if (lang.includes('en-us') || name.includes('us english')) score += 2;
     if (lang.includes('en-gb') || name.includes('uk english')) score += 2;
@@ -81,6 +83,7 @@ function voiceScore(v: SpeechSynthesisVoice, langPrefix: string): number {
 
 function pickVoice(langPrefix: string): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
   const candidates = voices
     .filter((v) => (v.lang ?? '').toLowerCase().startsWith(langPrefix))
     .sort((a, b) => voiceScore(b, langPrefix) - voiceScore(a, langPrefix));
@@ -94,16 +97,40 @@ function refreshVoices() {
 }
 
 function ensureVoiceListener() {
-  if (isSpeechSupported()) {
-    window.speechSynthesis.addEventListener?.('voiceschanged', refreshVoices);
-  }
+  if (!isSpeechSupported()) return;
+  // Gọi ngay lập tức để lấy voice đã sẵn sàng (Chrome trả về đồng bộ)
+  refreshVoices();
+  // Lắng nghe khi voice load xong (Firefox, Safari load bất đồng bộ)
+  window.speechSynthesis.addEventListener?.('voiceschanged', refreshVoices);
 }
 ensureVoiceListener();
 
+// Danh sách từ kỹ thuật EN phổ biến luôn đọc bằng giọng EN
+const EN_TECH_TERMS = new Set([
+  'api', 'cpu', 'gpu', 'npu', 'ram', 'rom', 'ssd', 'nvme', 'usb', 'hdmi',
+  'ai', 'ml', 'dl', 'llm', 'tts', 'stt', 'sdk', 'ide', 'ui', 'ux',
+  'html', 'css', 'sql', 'orm', 'oop', 'cli', 'gui', 'jwt', 'cdn',
+  'fps', 'hdr', 'qhd', 'uhd', '4k', '8k', 'rgb', 'oled', 'ips', 'led',
+  'wifi', 'lan', 'wan', 'vpn', 'dns', 'tcp', 'http', 'https', 'ssh',
+  'react', 'vue', 'node', 'npm', 'git', 'php', 'aws', 'gcp', 'ios',
+  'cuda', 'tops', 'tflops', 'gflops', 'lpddr', 'ddr', 'pcie', 'arm',
+  'rtx', 'gtx', 'rx', 'core', 'ultra', 'max', 'pro', 'plus',
+]);
+
 function classifyWord(token: string): Lang {
+  // Có dấu tiếng Việt → VI
   if (VI_DIACRITIC_RE.test(token)) return 'VI';
+  // Chứa ký tự kỹ thuật đặc biệt → EN
   if (/[\d_.#/@'\\-]/.test(token)) return 'EN';
+  // Toàn chữ hoa (viết tắt kỹ thuật) → EN
   if (/^[A-Z]{2,}[0-9]*$/.test(token)) return 'EN';
+  // Từ kỹ thuật phổ biến (không phân biệt hoa thường) → EN
+  if (EN_TECH_TERMS.has(token.toLowerCase())) return 'EN';
+  // Từ Latinh có số xen kẽ (LPDDR5X, RTX4090...) → EN
+  if (/^[A-Za-z]+[0-9]+[A-Za-z]*$/.test(token)) return 'EN';
+  // Từ Latinh ngắn (1-3 ký tự) thường là viết tắt → EN
+  if (/^[A-Za-z]{1,3}$/.test(token)) return 'EN';
+  // Còn lại: Latinh dài không dấu, giữ là EN (đọc bằng giọng EN)
   return 'EN';
 }
 
@@ -193,8 +220,17 @@ function speakNext(sessionId?: number) {
 
   const seg = current.queue[current.index++];
   const utterance = new SpeechSynthesisUtterance(seg.text);
-  utterance.lang = seg.lang === 'VI' ? 'vi-VN' : 'en-US';
-  utterance.voice = seg.lang === 'VI' ? viVoice : enVoice;
+  const isVi = seg.lang === 'VI';
+
+  // Gán voice trước lang để tránh conflict trên một số browser
+  const chosenVoice = isVi ? viVoice : enVoice;
+  if (chosenVoice) {
+    utterance.voice = chosenVoice;
+    utterance.lang = chosenVoice.lang; // dùng đúng lang của voice được chọn
+  } else {
+    // Fallback khi chưa load được voice
+    utterance.lang = isVi ? 'vi-VN' : 'en-US';
+  }
   utterance.rate = current.rate;
   utterance.pitch = current.pitch;
 
@@ -213,10 +249,32 @@ function speakNext(sessionId?: number) {
       return;
     }
     if (session.cancelled) return;
+    // Log lỗi để dễ debug
+    console.warn('[speech] utterance error:', event.error, '| text:', seg.text.slice(0, 40));
     if (session.gapTimer !== null) window.clearTimeout(session.gapTimer);
     session.gapTimer = window.setTimeout(() => {
       speakNext(myId);
     }, GAP_MS);
+  };
+
+  // Chrome bug workaround: TTS thường bị treo sau ~15 giây
+  // Giải pháp: pause/resume mỗi 10 giây để duy trì phiên
+  const keepAlive = window.setInterval(() => {
+    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    }
+  }, 10_000);
+
+  const origOnEnd = utterance.onend;
+  utterance.onend = (ev) => {
+    window.clearInterval(keepAlive);
+    (origOnEnd as any)?.(ev);
+  };
+  const origOnError = utterance.onerror;
+  utterance.onerror = (ev) => {
+    window.clearInterval(keepAlive);
+    (origOnError as any)?.(ev);
   };
 
   window.speechSynthesis.speak(utterance);
