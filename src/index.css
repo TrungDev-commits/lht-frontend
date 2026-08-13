@@ -26,3 +26,138 @@
 .lht-glow-pulse {
   animation: lht-pulse-glow 1.6s ease-in-out infinite;
 }
+
+/* ── Iron Man Arc Reactor start button ──────────────────────────────── */
+
+@keyframes lht-orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lht-core-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(255, 140, 50, 0.8)) drop-shadow(0 0 16px rgba(255, 30, 30, 0.45));
+  }
+  50% {
+    filter: drop-shadow(0 0 9px rgba(255, 160, 60, 1)) drop-shadow(0 0 26px rgba(255, 30, 30, 0.75));
+  }
+}
+
+@keyframes lht-halo {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes lht-blink {
+  0%, 60% {
+    opacity: 1;
+  }
+  61%, 100% {
+    opacity: 0.35;
+  }
+}
+
+.lht-reactor-btn {
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 94, 0, 0.45);
+  cursor: pointer;
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.16), transparent 42%),
+    radial-gradient(circle at 50% 62%, #3a0a0a, #140404 68%, #060101);
+  box-shadow:
+    inset 2px 2px 5px rgba(255, 120, 80, 0.18),
+    inset -4px -6px 12px rgba(0, 0, 0, 0.95),
+    0 20px 45px rgba(0, 0, 0, 0.75),
+    0 0 34px rgba(255, 30, 30, 0.35),
+    0 0 80px rgba(255, 30, 30, 0.18);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.lht-reactor-btn:hover {
+  border-color: rgba(255, 120, 30, 0.85);
+  box-shadow:
+    inset 2px 2px 5px rgba(255, 120, 80, 0.22),
+    inset -4px -6px 12px rgba(0, 0, 0, 0.9),
+    0 22px 50px rgba(0, 0, 0, 0.8),
+    0 0 46px rgba(255, 60, 20, 0.55),
+    0 0 110px rgba(255, 30, 30, 0.3);
+}
+
+.lht-reactor-btn:active {
+  transform: translateY(4px) scale(0.96);
+  box-shadow:
+    inset 3px 3px 8px rgba(0, 0, 0, 0.9),
+    inset -1px -1px 3px rgba(255, 120, 80, 0.15),
+    0 6px 16px rgba(0, 0, 0, 0.7),
+    0 0 22px rgba(255, 30, 30, 0.4);
+}
+
+.lht-reactor-btn:focus-visible {
+  outline: 2px solid #ff5e00;
+  outline-offset: 5px;
+}
+
+.lht-arc-orbit {
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 24deg,
+    rgba(255, 120, 40, 0.95) 44deg,
+    transparent 64deg 130deg,
+    rgba(255, 30, 30, 0.9) 150deg,
+    transparent 170deg 240deg,
+    rgba(255, 120, 40, 0.75) 260deg,
+    transparent 280deg 350deg,
+    rgba(255, 30, 30, 0.55) 352deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 3px));
+  animation: lht-orbit-spin 7s linear infinite;
+}
+
+.lht-reactor-notch {
+  pointer-events: none;
+  background: repeating-conic-gradient(rgba(255, 94, 0, 0.55) 0deg 4deg, transparent 4deg 12deg);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+}
+
+.lht-core-glow {
+  animation: lht-core-glow 2.4s ease-in-out infinite;
+}
+
+.lht-reactor-halo {
+  animation: lht-halo 3.2s ease-in-out infinite;
+}
+
+.lht-blink {
+  animation: lht-blink 2s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lht-arc-orbit,
+  .lht-reactor-notch,
+  .lht-core-glow,
+  .lht-reactor-halo,
+  .lht-blink {
+    animation: none;
+  }
+  .lht-reactor-btn,
+  .lht-reactor-btn:hover,
+  .lht-reactor-btn:active {
+    transition: none;
+  }
+}
