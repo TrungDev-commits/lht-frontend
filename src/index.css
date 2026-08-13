@@ -27,7 +27,7 @@
   animation: lht-pulse-glow 1.6s ease-in-out infinite;
 }
 
-/* ── Iron Man Arc Reactor start button ──────────────────────────────── */
+/* ── Iron Man Nanotech Arc Reactor start button ─────────────────────── */
 
 @keyframes lht-orbit-spin {
   from {
@@ -35,6 +35,21 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes lht-orbit-spin-rev {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes lht-dash-flow {
+  to {
+    stroke-dashoffset: -6;
   }
 }
 
@@ -64,6 +79,15 @@
   }
   61%, 100% {
     opacity: 0.35;
+  }
+}
+
+@keyframes lht-scan {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -110,29 +134,85 @@
   outline-offset: 5px;
 }
 
-.lht-arc-orbit {
-  pointer-events: none;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg 24deg,
-    rgba(255, 120, 40, 0.95) 44deg,
-    transparent 64deg 130deg,
-    rgba(255, 30, 30, 0.9) 150deg,
-    transparent 170deg 240deg,
-    rgba(255, 120, 40, 0.75) 260deg,
-    transparent 280deg 350deg,
-    rgba(255, 30, 30, 0.55) 352deg
-  );
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 3px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 3px));
-  animation: lht-orbit-spin 7s linear infinite;
-}
+/* Layered orbital machinery around the reactor */
 
-.lht-reactor-notch {
+.lht-ring,
+.lht-sweep {
+  position: absolute;
+  border-radius: 9999px;
   pointer-events: none;
-  background: repeating-conic-gradient(rgba(255, 94, 0, 0.55) 0deg 4deg, transparent 4deg 12deg);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+}
+
+.lht-ring-gold {
+  background: repeating-conic-gradient(rgba(255, 170, 60, 0.85) 0deg 8deg, transparent 8deg 22deg);
+  animation: lht-orbit-spin 9s linear infinite;
+}
+
+.lht-ring-red {
+  background: repeating-conic-gradient(rgba(255, 30, 30, 0.6) 0deg 6deg, transparent 6deg 18deg);
+  animation: lht-orbit-spin-rev 12s linear infinite;
+}
+
+.lht-sweep {
+  -webkit-mask: radial-gradient(circle, transparent 66%, #000 66% 68%, transparent 68%);
+  mask: radial-gradient(circle, transparent 66%, #000 66% 68%, transparent 68%);
+  background: conic-gradient(from 0deg, rgba(255, 120, 40, 0.4), transparent 70deg);
+  animation: lht-scan 5s linear infinite;
+}
+
+/* Orbiting nano-bots */
+
+.lht-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 9999px;
+  margin: calc(var(--r) * -1px);
+  width: calc(var(--r) * 2px);
+  height: calc(var(--r) * 2px);
+  pointer-events: none;
+  animation: lht-orbit-spin var(--d, 8s) linear infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+.lht-nano {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 1px;
+  background: #ffc554;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  box-shadow:
+    0 0 6px 1px rgba(255, 150, 60, 0.9),
+    0 0 12px 2px rgba(255, 30, 30, 0.6);
+}
+
+/* Slow-drifting hexagonal frame */
+
+.lht-spin-slow,
+.lht-spin-rev {
+  transform-box: view-box;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.lht-spin-slow {
+  animation: lht-orbit-spin 24s linear infinite;
+}
+
+.lht-spin-rev {
+  animation: lht-orbit-spin-rev 16s linear infinite;
+}
+
+/* Energy flowing along circuit traces */
+
+.lht-circuit {
+  animation: lht-dash-flow 1.1s linear infinite;
 }
 
 .lht-core-glow {
@@ -147,9 +227,41 @@
   animation: lht-blink 2s steps(1) infinite;
 }
 
+/* Hover / focus: reactor charges up, orbits accelerate */
+
+.lht-reactor-stage:hover .lht-ring-gold,
+.lht-reactor-stage:focus-within .lht-ring-gold {
+  animation-duration: 3.5s;
+}
+
+.lht-reactor-stage:hover .lht-ring-red,
+.lht-reactor-stage:focus-within .lht-ring-red {
+  animation-duration: 5s;
+}
+
+.lht-reactor-stage:hover .lht-sweep,
+.lht-reactor-stage:focus-within .lht-sweep {
+  animation-duration: 2.2s;
+}
+
+.lht-reactor-stage:hover .lht-core-glow,
+.lht-reactor-stage:focus-within .lht-core-glow {
+  animation-duration: 0.9s;
+}
+
+.lht-reactor-stage:hover .lht-spin-slow,
+.lht-reactor-stage:focus-within .lht-spin-slow {
+  animation-duration: 10s;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .lht-arc-orbit,
-  .lht-reactor-notch,
+  .lht-ring-gold,
+  .lht-ring-red,
+  .lht-sweep,
+  .lht-orbit,
+  .lht-spin-slow,
+  .lht-spin-rev,
+  .lht-circuit,
   .lht-core-glow,
   .lht-reactor-halo,
   .lht-blink {
